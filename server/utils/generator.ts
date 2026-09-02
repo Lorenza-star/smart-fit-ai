@@ -1,4 +1,3 @@
-import { useRuntimeConfig } from "nitro";
 import { getAdminClient } from "./supabase-admin";
 import { callOllama } from "./ollama";
 import { buildGenerationContext } from "./prompt";
@@ -12,8 +11,7 @@ import type { ProfileRow, PlanFeedbackRow } from "../../src/lib/types";
  */
 export async function runPlanGeneration(planId: string, userId: string): Promise<void> {
   const admin = getAdminClient();
-  const config = useRuntimeConfig();
-  const model = config.ollamaModel || "llama3.1";
+  const model = process.env.OLLAMA_MODEL ?? "llama3.1";
 
   try {
     // 1️⃣ Fetch the user's profile and latest feedback (if any)

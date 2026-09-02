@@ -1,5 +1,3 @@
-import { useRuntimeConfig } from "nitro";
-
 export class OllamaError extends Error {
   code: string;
   constructor(code: string, message: string) {
@@ -11,16 +9,17 @@ export class OllamaError extends Error {
 
 /**
  * Call the local Ollama advisor asking for strict JSON. Fails loudly with a
- * machine-readable code: 'ollama_offline' | 'ollama_timeout' | 'ollama_error'.
+ * machine‑readable code: 'ollama_offline' | 'ollama_timeout' | 'ollama_error'.
  * Callers must never convert these failures into a fake success.
  */
-export async function callOllama(prompt: string, timeoutMs = 60_000): Promise<{ text: string }> {
-  const config = useRuntimeConfig();
-  const base = (config.ollamaBaseUrl || "http://localhost:11434").replace(/\/+$/, "");
-  const model = config.ollamaModel || "llama3.1";
+export async function callOllama(prompt: string, timeoutMs = 60000): Promise<{ text: string }> {
+  const base = (process.env.OLLAMA_BASE_URL ?? "http://localhost:11434").replace(/\/+$/, "");
+  const model = process.env.OLLAMA_MODEL ?? "llama3.1";
 
   let res: Response;
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
     res = await fetch(`${base}/api/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -31,8 +30,9 @@ export async function callOllama(prompt: string, timeoutMs = 60_000): Promise<{ 
         format: "json",
         options: { temperature: 0.7 },
       }),
-      signal: AbortSignal.timeout(timeoutMs),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
   } catch (err) {
     if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError")) {
       throw new OllamaError("ollama_timeout", "The advisor took too long to respond.");
