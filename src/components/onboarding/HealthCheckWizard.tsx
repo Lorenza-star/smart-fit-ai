@@ -174,7 +174,7 @@ export const HealthCheckWizard = () => {
                 <Input
                   id="recentSurgeryMonths"
                   type="number"
-                  min={0}
+                  min={1}
                   value={recentSurgeryMonths}
                   onChange={(e) => setRecentSurgeryMonths(e.target.value)}
                   placeholder="e.g. 2"
