@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "../../lib/utils";
 import { ACTIVITY_OPTIONS, GOAL_OPTIONS, CONDITION_OPTIONS } from "../../lib/risk";
 
 /**
@@ -49,7 +48,7 @@ export const HealthCheckWizard = () => {
       setSubmitting(false);
       return;
     }
-    console.log('Onboarding payload:', payload);
+    const payload = {
       age,
       activity_level: activity,
       goals,
@@ -60,8 +59,9 @@ export const HealthCheckWizard = () => {
       pregnant,
       recent_surgery_months: recentSurgeryMonths ? parseInt(recentSurgeryMonths) : null,
     };
+    // Debug logs – separate statements, not inside the object
+    console.log("Onboarding payload:", payload);
     try {
-      console.log('Onboarding payload:', payload);
       const resp = await fetch("/api/onboarding", {
         method: "POST",
         headers: {
@@ -70,9 +70,9 @@ export const HealthCheckWizard = () => {
         },
         body: JSON.stringify(payload),
       });
-      console.log('Onboarding response status:', resp.status);
+      console.log("Onboarding response status:", resp.status);
       const json = await resp.json();
-      console.log('Onboarding response body:', json);
+      console.log("Onboarding response body:", json);
       if (!resp.ok) throw new Error(json?.message || "Server error");
       const status = json.profile?.risk_status;
       if (status === "pending_review") navigate("/pending");
@@ -92,7 +92,14 @@ export const HealthCheckWizard = () => {
             <div className="space-y-4">
               <div>
                 <Label>Age</Label>
-                <Input type="number" min={16} max={80} value={age} onChange={(e) => setAge(parseInt(e.target.value) || 0)} required />
+                <Input
+                  type="number"
+                  min={16}
+                  max={80}
+                  value={age}
+                  onChange={(e) => setAge(parseInt(e.target.value) || 0)}
+                  required
+                />
               </div>
               <div>
                 <Label>Activity level</Label>
@@ -123,7 +130,7 @@ export const HealthCheckWizard = () => {
                     <Checkbox
                       id={opt.value}
                       checked={goals.includes(opt.value)}
-                      onCheckedChange={(c) => setGoals(toggleArray(goals, opt.value))}
+                      onCheckedChange={() => setGoals(toggleArray(goals, opt.value))}
                     />
                     <Label htmlFor={opt.value}>{opt.label}</Label>
                     <span className="text-sm text-muted-foreground">{opt.hint}</span>
@@ -137,7 +144,7 @@ export const HealthCheckWizard = () => {
                     <Checkbox
                       id={opt.value}
                       checked={conditions.includes(opt.value)}
-                      onCheckedChange={(c) => setConditions(toggleArray(conditions, opt.value))}
+                      onCheckedChange={() => setConditions(toggleArray(conditions, opt.value))}
                     />
                     <Label htmlFor={opt.value}>{opt.label}</Label>
                   </div>
@@ -158,7 +165,12 @@ export const HealthCheckWizard = () => {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="injuries">Current injuries / limitations (optional)</Label>
-                <Input id="injuries" value={injuries} onChange={(e) => setInjuries(e.target.value)} placeholder="e.g. occasional knee pain" />
+                <Input
+                  id="injuries"
+                  value={injuries}
+                  onChange={(e) => setInjuries(e.target.value)}
+                  placeholder="e.g. occasional knee pain"
+                />
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox id="chestPain" checked={chestPain} onCheckedChange={(c) => setChestPain(!!c)} />
