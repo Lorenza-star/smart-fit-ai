@@ -12,7 +12,9 @@ export default function Index() {
           <Logo className="h-8 w-8" />
           <span className="text-xl font-semibold">SmartFit AI</span>
         </Link>
-        <Link to="/signup" className="text-primary-foreground">Login / Sign up</Link>
+        <Button asChild size="sm" className="ml-2 bg-primary-500 hover:bg-primary-700 text-white">
+          <Link to="/signup">Login / Sign up</Link>
+        </Button>
       </header>
       <main className="flex flex-1 flex-col items-center justify-center px-4">
         <Card className="max-w-2xl w-full mx-auto">
