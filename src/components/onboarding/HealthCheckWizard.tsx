@@ -61,6 +61,7 @@ export const HealthCheckWizard = () => {
       recent_surgery_months: recentSurgeryMonths ? parseInt(recentSurgeryMonths) : null,
     };
     try {
+      console.log('Onboarding payload:', payload);
       const resp = await fetch("/api/onboarding", {
         method: "POST",
         headers: {
@@ -69,7 +70,9 @@ export const HealthCheckWizard = () => {
         },
         body: JSON.stringify(payload),
       });
+      console.log('Onboarding response status:', resp.status);
       const json = await resp.json();
+      console.log('Onboarding response body:', json);
       if (!resp.ok) throw new Error(json?.message || "Server error");
       const status = json.profile?.risk_status;
       if (status === "pending_review") navigate("/pending");
