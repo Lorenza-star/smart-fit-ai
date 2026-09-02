@@ -49,7 +49,7 @@ export const HealthCheckWizard = () => {
       setSubmitting(false);
       return;
     }
-    const payload = {
+    console.log('Onboarding payload:', payload);
       age,
       activity_level: activity,
       goals,
