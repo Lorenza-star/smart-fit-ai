@@ -42,7 +42,24 @@ export default function PlanPage() {
     }
     if (!latest) {
       // No plan yet – kick off generation via server endpoint.
-      const resp = await fetch("/api/plans/generate", { method: "POST" });
+      if (!latest) {
+  // No plan yet – kick off generation via server endpoint.
+  const { data: sessionData } = await supabase.auth.getSession();
+  const resp = await fetch("/api/plans/generate", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${sessionData.session?.access_token ?? ""}`,
+      "Content-Type": "application/json",
+    },
+  });
+  const data = await resp.json();
+  if (data.plan_id) {
+    poll(data.plan_id);
+  } else {
+    setErrorCode("gen_start_error");
+    setLoading(false);
+  }
+}
       const data = await resp.json();
       if (data.plan_id) {
         poll(data.plan_id);
