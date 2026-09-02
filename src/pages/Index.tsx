@@ -7,7 +7,7 @@ import { Logo } from "../components/Logo";
 export default function Index() {
   return (
     <div className="min-h-screen flex flex-col bg-primary-100">
-      <header className="flex items-center justify-between p-4 bg-primary-600 text-primary-foreground">
+      <header className="flex items-center justify-between p-4 bg-[#0E9488] text-white">
         <Link to="/" className="flex items-center space-x-2">
           <Logo className="h-8 w-8" />
           <span className="text-xl font-semibold">SmartFit AI</span>
