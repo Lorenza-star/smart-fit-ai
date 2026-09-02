@@ -1,19 +1,34 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Link } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Logo } from "../components/Logo";
 
-import { MadeWithDyad } from "@/components/made-with-dyad";
-
-const Index = () => {
+/** Home/landing page – calm design with CTA to start signup. */
+export default function Index() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">
-          Start building your amazing project here!
-        </p>
-      </div>
-      <MadeWithDyad />
+    <div className="min-h-screen flex flex-col bg-primary-100">
+      <header className="flex items-center justify-between p-4 bg-primary-600 text-primary-foreground">
+        <Link to="/" className="flex items-center space-x-2">
+          <Logo className="h-8 w-8" />
+          <span className="text-xl font-semibold">SmartFit AI</span>
+        </Link>
+        <Link to="/login" className="text-primary-foreground">Login / Sign up</Link>
+      </header>
+      <main className="flex flex-1 flex-col items-center justify-center px-4">
+        <Card className="max-w-2xl w-full mx-auto">
+          <CardHeader>
+            <CardTitle className="text-2xl">Personalised fitness coaching for busy pros</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-lg">
+              Stay fit, stay focused, stay safe. Our AI builds a weekly workout + nutrition plan just for you, based on your health profile.
+            </p>
+            <Button asChild className="w-full">
+              <Link to="/signup">Get started for RM49/mo</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
     </div>
   );
-};
-
-export default Index;
+}
