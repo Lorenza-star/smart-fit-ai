@@ -12,6 +12,8 @@ import { ACTIVITY_OPTIONS, GOAL_OPTIONS, CONDITION_OPTIONS } from "../../lib/ris
 /**
  * Multi‑step health‑check wizard used on the onboarding page.
  * Collects age, activity, goals, conditions, injuries, and a few risk flags.
+ * The "Recent surgery" field is optional – a checkbox toggles the numeric
+ * months input. When unchecked the payload sends `null` for recent_surgery_months.
  * On final submit it POSTs to the server‑side /api/onboarding endpoint.
  */
 export const HealthCheckWizard = () => {
@@ -26,12 +28,14 @@ export const HealthCheckWizard = () => {
   const [chestPain, setChestPain] = useState(false);
   const [fainting, setFainting] = useState(false);
   const [pregnant, setPregnant] = useState(false);
+  // Optional recent surgery handling
+  const [hasRecentSurgery, setHasRecentSurgery] = useState(false);
   const [recentSurgeryMonths, setRecentSurgeryMonths] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const toggleArray = (arr: string[], value: string) =>
-    arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
+    arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value];
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -57,7 +61,11 @@ export const HealthCheckWizard = () => {
       chest_pain: chestPain,
       fainting,
       pregnant,
-      recent_surgery_months: recentSurgeryMonths ? parseInt(recentSurgeryMonths) : null,
+      recent_surgery_months: hasRecentSurgery
+        ? recentSurgeryMonths
+          ? parseInt(recentSurgeryMonths)
+          : null
+        : null,
     };
     // Debug logs – separate statements, not inside the object
     console.log("Onboarding payload:", payload);
@@ -97,14 +105,14 @@ export const HealthCheckWizard = () => {
                   min={16}
                   max={80}
                   value={age}
-                  onChange={(e) => setAge(parseInt(e.target.value) || 0)}
+                  onChange={e => setAge(parseInt(e.target.value) || 0)}
                   required
                 />
               </div>
               <div>
                 <Label>Activity level</Label>
                 <RadioGroup value={activity} onValueChange={setActivity}>
-                  {ACTIVITY_OPTIONS.map((opt) => (
+                  {ACTIVITY_OPTIONS.map(opt => (
                     <div key={opt.value} className="flex items-center space-x-2">
                       <RadioGroupItem value={opt.value} id={opt.value} />
                       <Label htmlFor={opt.value}>{opt.label}</Label>
@@ -125,7 +133,7 @@ export const HealthCheckWizard = () => {
             <div className="space-y-4">
               <div>
                 <Label>Goals (pick at least one)</Label>
-                {GOAL_OPTIONS.map((opt) => (
+                {GOAL_OPTIONS.map(opt => (
                   <div key={opt.value} className="flex items-center space-x-2">
                     <Checkbox
                       id={opt.value}
@@ -139,7 +147,7 @@ export const HealthCheckWizard = () => {
               </div>
               <div>
                 <Label>Existing health conditions (optional)</Label>
-                {CONDITION_OPTIONS.map((opt) => (
+                {CONDITION_OPTIONS.map(opt => (
                   <div key={opt.value} className="flex items-center space-x-2">
                     <Checkbox
                       id={opt.value}
@@ -168,33 +176,43 @@ export const HealthCheckWizard = () => {
                 <Input
                   id="injuries"
                   value={injuries}
-                  onChange={(e) => setInjuries(e.target.value)}
+                  onChange={e => setInjuries(e.target.value)}
                   placeholder="e.g. occasional knee pain"
                 />
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox id="chestPain" checked={chestPain} onCheckedChange={(c) => setChestPain(!!c)} />
+                <Checkbox id="chestPain" checked={chestPain} onCheckedChange={c => setChestPain(!!c)} />
                 <Label htmlFor="chestPain">Chest pain / tightness</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox id="fainting" checked={fainting} onCheckedChange={(c) => setFainting(!!c)} />
+                <Checkbox id="fainting" checked={fainting} onCheckedChange={c => setFainting(!!c)} />
                 <Label htmlFor="fainting">Recent fainting episodes</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox id="pregnant" checked={pregnant} onCheckedChange={(c) => setPregnant(!!c)} />
+                <Checkbox id="pregnant" checked={pregnant} onCheckedChange={c => setPregnant(!!c)} />
                 <Label htmlFor="pregnant">Pregnant</Label>
               </div>
-              <div>
-                <Label htmlFor="recentSurgeryMonths">Recent surgery (months ago, if any)</Label>
-                <Input
-                  id="recentSurgeryMonths"
-                  type="number"
-                  min={1}
-                  value={recentSurgeryMonths}
-                  onChange={(e) => setRecentSurgeryMonths(e.target.value)}
-                  placeholder="e.g. 2"
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="hasRecentSurgery"
+                  checked={hasRecentSurgery}
+                  onCheckedChange={c => setHasRecentSurgery(!!c)}
                 />
+                <Label htmlFor="hasRecentSurgery">I have had recent surgery</Label>
               </div>
+              {hasRecentSurgery && (
+                <div>
+                  <Label htmlFor="recentSurgeryMonths">Months ago</Label>
+                  <Input
+                    id="recentSurgeryMonths"
+                    type="number"
+                    min={1}
+                    value={recentSurgeryMonths}
+                    onChange={e => setRecentSurgeryMonths(e.target.value)}
+                    placeholder="e.g. 2"
+                  />
+                </div>
+              )}
             </div>
             {error && <p className="text-sm text-destructive mt-2">{error}</p>}
             <div className="flex justify-between mt-6">
