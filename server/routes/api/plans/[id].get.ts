@@ -1,7 +1,7 @@
 import { defineHandler } from "nitro";
 import { createError } from "nitro/h3";
-import { getAdminClient } from "../../utils/supabase-admin";
-import { requireUser } from "../../utils/auth";
+import { getAdminClient } from "../../../utils/supabase-admin";
+import { requireUser } from "../../../utils/auth";
 import type { User } from "@supabase/supabase-js";
 
 /**

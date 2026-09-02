@@ -1,8 +1,8 @@
 import { defineHandler } from "nitro";
 import { readBody, createError } from "nitro/h3";
-import { getAdminClient } from "../../utils/supabase-admin";
-import { requireUser } from "../../utils/auth";
-import { runPlanGeneration } from "../../utils/generator";
+import { getAdminClient } from "../../../utils/supabase-admin";
+import { requireUser } from "../../../utils/auth";
+import { runPlanGeneration } from "../../../utils/generator";
 import type { User } from "@supabase/supabase-js";
 
 /**
