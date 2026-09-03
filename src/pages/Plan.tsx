@@ -78,20 +78,35 @@ export default function PlanPage() {
     }
   };
 
-  // Poll the plan status every 1.5 s.
+  // Poll the plan status every 1.5 s. Tolerates transient network blips:
+  // a single failed request no longer kills the flow — only MAX_CONSECUTIVE_FAILURES
+  // in a row (default 5, ~7.5s of continuous failure) triggers poll_error.
   const poll = (planId: string) => {
+    const MAX_CONSECUTIVE_FAILURES = 5;
+    let consecutiveFailures = 0;
+
     const interval = setInterval(async () => {
       const { data, error } = await supabase!
         .from("weekly_plans")
         .select("status, error_code, plan_json")
         .eq("id", planId)
         .maybeSingle();
+
       if (error) {
-        clearInterval(interval);
-        setErrorCode("poll_error");
-        setLoading(false);
+        consecutiveFailures += 1;
+        console.warn(`Poll request failed (${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES}):`, error);
+        if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+          clearInterval(interval);
+          setErrorCode("poll_error");
+          setLoading(false);
+        }
+        // Otherwise: swallow this failure and let the next tick retry.
         return;
       }
+
+      // A successful request resets the failure streak.
+      consecutiveFailures = 0;
+
       if (!data) return;
       if (data.status === "completed") {
         clearInterval(interval);
