@@ -20,8 +20,17 @@ export const FeedbackForm = ({ planId }: { planId: string }) => {
     e.preventDefault();
     if (!supabase) return;
     setSubmitting(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setSubmitting(false);
+      alert("Not signed in.");
+      return;
+    }
+
     const { error } = await supabase.from("plan_feedback").insert({
       plan_id: planId,
+      user_id: user.id,
       rating,
       notes,
       days_completed: days,
