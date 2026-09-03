@@ -12,12 +12,24 @@ import { Button } from "@/components/ui/button";
 /**
  * Plan page – displays the latest weekly plan (or starts generation).
  * Polls the server for plan status until it is `completed` or `failed`.
+ *
+ * NOTE: all Supabase reads now go through our own /api/plans/* endpoints
+ * instead of the browser talking to Supabase directly. The server always
+ * has a working Supabase connection; some client environments (e.g. certain
+ * VM network setups) cannot reach supabase.co directly from the browser.
  */
 export default function PlanPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState<any>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
+
+  // Small helper: build an Authorization header from the current Supabase session.
+  const authHeaders = async (): Promise<Record<string, string>> => {
+    const { data } = await supabase!.auth.getSession();
+    const token = data.session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
 
   // Helper to fetch the latest plan for the user.
   const fetchLatest = async () => {
@@ -27,39 +39,33 @@ export default function PlanPage() {
       navigate("/login");
       return;
     }
-    const { data: latest, error } = await supabase
-      .from("weekly_plans")
-      .select("id, status, error_code, plan_json")
-      .eq("user_id", session.session.user.id)
-      .order("week_number", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+
+    const headers = await authHeaders();
+    let latestResp: Response;
+    try {
+      latestResp = await fetch("/api/plans/latest", { headers });
+    } catch (e) {
+      console.error(e);
+      setErrorCode("fetch_error");
+      setLoading(false);
+      return;
+    }
+    if (!latestResp.ok) {
+      setErrorCode("fetch_error");
+      setLoading(false);
+      return;
+    }
+    const { plan: latest, error } = await latestResp.json();
     if (error) {
       console.error(error);
       setErrorCode("fetch_error");
       setLoading(false);
       return;
     }
+
     if (!latest) {
       // No plan yet – kick off generation via server endpoint.
-      if (!latest) {
-  // No plan yet – kick off generation via server endpoint.
-  const { data: sessionData } = await supabase.auth.getSession();
-  const resp = await fetch("/api/plans/generate", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${sessionData.session?.access_token ?? ""}`,
-      "Content-Type": "application/json",
-    },
-  });
-  const data = await resp.json();
-  if (data.plan_id) {
-    poll(data.plan_id);
-  } else {
-    setErrorCode("gen_start_error");
-    setLoading(false);
-  }
-}
+      const resp = await fetch("/api/plans/generate", { method: "POST", headers });
       const data = await resp.json();
       if (data.plan_id) {
         poll(data.plan_id);
@@ -78,20 +84,42 @@ export default function PlanPage() {
     }
   };
 
-  // Poll the plan status every 1.5 s. Tolerates transient network blips:
-  // a single failed request no longer kills the flow — only MAX_CONSECUTIVE_FAILURES
-  // in a row (default 5, ~7.5s of continuous failure) triggers poll_error.
+  // Poll the plan status every 1.5 s via our own API (not Supabase directly).
+  // Tolerates transient network blips: a single failed request no longer
+  // kills the flow — only MAX_CONSECUTIVE_FAILURES in a row (default 5,
+  // ~7.5s of continuous failure) triggers poll_error.
   const poll = (planId: string) => {
     const MAX_CONSECUTIVE_FAILURES = 5;
     let consecutiveFailures = 0;
 
     const interval = setInterval(async () => {
-      const { data, error } = await supabase!
-        .from("weekly_plans")
-        .select("status, error_code, plan_json")
-        .eq("id", planId)
-        .maybeSingle();
+      let resp: Response;
+      try {
+        const headers = await authHeaders();
+        resp = await fetch("/api/plans/latest", { headers });
+      } catch (e) {
+        consecutiveFailures += 1;
+        console.warn(`Poll request failed (${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES}):`, e);
+        if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+          clearInterval(interval);
+          setErrorCode("poll_error");
+          setLoading(false);
+        }
+        return;
+      }
 
+      if (!resp.ok) {
+        consecutiveFailures += 1;
+        console.warn(`Poll request failed (${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES}): HTTP ${resp.status}`);
+        if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+          clearInterval(interval);
+          setErrorCode("poll_error");
+          setLoading(false);
+        }
+        return;
+      }
+
+      const { plan: data, error } = await resp.json();
       if (error) {
         consecutiveFailures += 1;
         console.warn(`Poll request failed (${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES}):`, error);
@@ -100,14 +128,15 @@ export default function PlanPage() {
           setErrorCode("poll_error");
           setLoading(false);
         }
-        // Otherwise: swallow this failure and let the next tick retry.
         return;
       }
 
       // A successful request resets the failure streak.
       consecutiveFailures = 0;
 
-      if (!data) return;
+      // Sanity-check: ignore stale rows in case a newer plan_id exists.
+      if (!data || (planId && data.id !== planId)) return;
+
       if (data.status === "completed") {
         clearInterval(interval);
         setPlan(data.plan_json);
