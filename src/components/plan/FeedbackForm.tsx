@@ -28,6 +28,8 @@ export const FeedbackForm = ({ planId }: { planId: string }) => {
       return;
     }
 
+    console.log("DEBUG feedback insert:", { userId: user.id, planId }); //
+
     const { error } = await supabase.from("plan_feedback").insert({
       plan_id: planId,
       user_id: user.id,
