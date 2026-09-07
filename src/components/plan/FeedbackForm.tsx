@@ -29,13 +29,16 @@ export const FeedbackForm = ({ planId }: { planId: string }) => {
     }
 
 
-    const { error } = await supabase.from("plan_feedback").insert({
-      plan_id: planId,
-      user_id: user.id,
-      rating,
-      notes,
-      days_completed: days,
-    });
+    const { error } = await supabase.from("plan_feedback").upsert(
+    {
+    plan_id: planId,
+    user_id: user.id,
+    rating,
+    notes,
+    days_completed: days,
+    },
+    { onConflict: "plan_id,user_id" }
+    );
     setSubmitting(false);
     if (error) {
       alert(error.message);
