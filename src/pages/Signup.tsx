@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-/** Simple sign‑up page – email + password only (no third‑party). */
+/** Simple sign‑up page – email + password only (no third‑party). */
 export default function Signup() {
   const navigate = useNavigate();
 
@@ -26,14 +26,23 @@ export default function Signup() {
     const form = e.currentTarget as HTMLFormElement;
     const email = (form.email as HTMLInputElement).value;
     const password = (form.password as HTMLInputElement).value;
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) {
       alert(error.message);
-    } else {
-      // Supabase will send a confirmation email – show a friendly hint.
-      alert("Check your email for a confirmation link before signing in.");
-      navigate("/login");
+      return;
     }
+
+    // If email confirmation is disabled in Supabase, signUp already returns
+    // a valid session — go straight into the app instead of telling the
+    // user to check an email that will never need to be confirmed.
+    if (data.session) {
+      navigate("/onboarding");
+      return;
+    }
+
+    // Otherwise, email confirmation is required — show the hint.
+    alert("Check your email for a confirmation link before signing in.");
+    navigate("/login");
   };
 
   if (!supabase) return (
