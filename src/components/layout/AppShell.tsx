@@ -21,10 +21,15 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
           <span className="text-lg font-semibold">SmartFit AI</span>
         </Link>
         {isSupabaseConfigured && (
-          <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-primary-foreground">
-            Sign out
-          </Button>
-        )}
+                  <>
+                    <Link to="/dashboard" className="text-white hover:underline mr-2">
+                      Dashboard
+                    </Link>
+                    <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-primary-foreground">
+                      Sign out
+                    </Button>
+                  </>
+                )}
       </header>
       <main className={cn("flex-1 container mx-auto p-4", "max-w-3xl")}>{children}</main>
     </div>
