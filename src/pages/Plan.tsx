@@ -190,10 +190,11 @@ export default function PlanPage() {
     );
   }
 
+    console.log("DEBUG plan object:", plan);
+
   return (
     <AppShell>
       <PlanView plan={plan} />
-      console.log("DEBUG plan object:", plan);
       <FeedbackForm planId={plan?.id} />
     </AppShell>
   );
