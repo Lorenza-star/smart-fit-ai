@@ -40,8 +40,6 @@ export async function runPlanGeneration(planId: string, userId: string): Promise
 
     const { text } = await callOllama(prompt);
 
-    console.log("[generator] raw Ollama response (first 2000 chars):", text.slice(0, 2000));
-
     const plan = safeParsePlan(text);
     if (!plan) {
       await admin
@@ -49,7 +47,7 @@ export async function runPlanGeneration(planId: string, userId: string): Promise
         .update({
           status: "failed",
           error_code: "invalid_plan",
-          context_snapshot: { ...snapshot, debug_raw_output: text.slice(0, 4000) },
+          context_snapshot: snapshot,
           completed_at: new Date().toISOString(),
         })
         .eq("id", planId);
