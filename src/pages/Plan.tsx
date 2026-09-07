@@ -193,6 +193,7 @@ export default function PlanPage() {
   return (
     <AppShell>
       <PlanView plan={plan} />
+      console.log("DEBUG plan object:", plan);
       <FeedbackForm planId={plan?.id} />
     </AppShell>
   );
