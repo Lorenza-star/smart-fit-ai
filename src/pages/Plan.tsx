@@ -76,7 +76,7 @@ export default function PlanPage() {
     } else if (latest.status === "generating") {
       poll(latest.id);
     } else if (latest.status === "completed") {
-      setPlan(latest.plan_json);
+      setPlan(latest); 
       setLoading(false);
     } else {
       setErrorCode(latest.error_code || "unknown");
@@ -139,7 +139,7 @@ export default function PlanPage() {
 
       if (data.status === "completed") {
         clearInterval(interval);
-        setPlan(data.plan_json);
+        setPlan(data);
         setLoading(false);
       } else if (data.status === "failed") {
         clearInterval(interval);
@@ -190,11 +190,9 @@ export default function PlanPage() {
     );
   }
 
-    console.log("DEBUG plan object:", plan);
-
-  return (
+    return (
     <AppShell>
-      <PlanView plan={plan} />
+      <PlanView plan={plan?.plan_json} />
       <FeedbackForm planId={plan?.id} />
     </AppShell>
   );
