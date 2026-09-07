@@ -14,24 +14,24 @@ import { Button } from "@/components/ui/button";
  * Polls the server for plan status until it is `completed` or `failed`.
  *
  * NOTE: all Supabase reads now go through our own /api/plans/* endpoints
- * instead of the browser talking to Supabase directly. The server always
- * has a working Supabase connection; some client environments (e.g. certain
- * VM network setups) cannot reach supabase.co directly from the browser.
+ * instead of the browser talking to Supabase directly.
+ *
+ * IMPORTANT: we keep the *whole* plan row (id + plan_json), not just the
+ * plan_json content, because FeedbackForm needs the real plan id to submit
+ * feedback against the correct weekly_plans row.
  */
 export default function PlanPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [plan, setPlan] = useState<any>(null);
+  const [planRow, setPlanRow] = useState<{ id: string; plan_json: any } | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
 
-  // Small helper: build an Authorization header from the current Supabase session.
   const authHeaders = async (): Promise<Record<string, string>> => {
     const { data } = await supabase!.auth.getSession();
     const token = data.session?.access_token;
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  // Helper to fetch the latest plan for the user.
   const fetchLatest = async () => {
     if (!supabase) return;
     const { data: session } = await supabase.auth.getSession();
@@ -64,7 +64,6 @@ export default function PlanPage() {
     }
 
     if (!latest) {
-      // No plan yet – kick off generation via server endpoint.
       const resp = await fetch("/api/plans/generate", { method: "POST", headers });
       const data = await resp.json();
       if (data.plan_id) {
@@ -76,7 +75,7 @@ export default function PlanPage() {
     } else if (latest.status === "generating") {
       poll(latest.id);
     } else if (latest.status === "completed") {
-      setPlan(latest); 
+      setPlanRow({ id: latest.id, plan_json: latest.plan_json });
       setLoading(false);
     } else {
       setErrorCode(latest.error_code || "unknown");
@@ -84,10 +83,6 @@ export default function PlanPage() {
     }
   };
 
-  // Poll the plan status every 1.5 s via our own API (not Supabase directly).
-  // Tolerates transient network blips: a single failed request no longer
-  // kills the flow — only MAX_CONSECUTIVE_FAILURES in a row (default 5,
-  // ~7.5s of continuous failure) triggers poll_error.
   const poll = (planId: string) => {
     const MAX_CONSECUTIVE_FAILURES = 5;
     let consecutiveFailures = 0;
@@ -131,15 +126,13 @@ export default function PlanPage() {
         return;
       }
 
-      // A successful request resets the failure streak.
       consecutiveFailures = 0;
 
-      // Sanity-check: ignore stale rows in case a newer plan_id exists.
       if (!data || (planId && data.id !== planId)) return;
 
       if (data.status === "completed") {
         clearInterval(interval);
-        setPlan(data);
+        setPlanRow({ id: data.id, plan_json: data.plan_json });
         setLoading(false);
       } else if (data.status === "failed") {
         clearInterval(interval);
@@ -190,10 +183,10 @@ export default function PlanPage() {
     );
   }
 
-    return (
+  return (
     <AppShell>
-      <PlanView plan={plan?.plan_json} />
-      <FeedbackForm planId={plan?.id} />
+      <PlanView plan={planRow?.plan_json} />
+      {planRow?.id && <FeedbackForm planId={planRow.id} workouts={planRow.plan_json?.workouts ?? []} />}
     </AppShell>
   );
 }
