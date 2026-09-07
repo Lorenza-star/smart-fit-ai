@@ -25,6 +25,9 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                     <Link to="/dashboard" className="text-white hover:underline mr-2">
                       Dashboard
                     </Link>
+                    <Link to="/history" className="text-white hover:underline mr-2">
+                      History
+                    </Link>
                     <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-primary-foreground">
                       Sign out
                     </Button>
